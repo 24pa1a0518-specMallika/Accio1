@@ -19,7 +19,7 @@ export default function Login() {
       toast.success('Welcome back!');
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.message || (err.response?.data?.message) || 'Login failed');
     } finally { setLoading(false); }
   };
 

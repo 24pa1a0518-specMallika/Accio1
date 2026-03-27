@@ -104,13 +104,14 @@ export default function AdminPanel() {
                   </thead>
                   <tbody>
                     {items.map(item => (
-                      <tr key={item._id}>
+                      <tr key={item._id} style={{ opacity: item.status === 'returned' ? 0.6 : 1, background: item.status === 'returned' ? 'var(--brown-50)' : 'transparent' }}>
                         <td>
                           <div style={{fontWeight:600}}>{item.name}</div>
                           {item.brand && <div style={{fontSize:'11px',color:'var(--text-muted)'}}>🏷️ {item.brand}</div>}
                           {item.colour && <div style={{fontSize:'11px',color:'var(--text-muted)'}}>🎨 {item.colour}</div>}
                           {item.size && <div style={{fontSize:'11px',color:'var(--text-muted)'}}>📐 {item.size}</div>}
                           {item.matchScore > 0 && <div className="match-score" style={{marginTop:'4px'}}>⚡ {item.matchScore}%</div>}
+                          {item.status === 'returned' && <div style={{fontSize:'10px',color:'var(--brown-600)',fontWeight:700,marginTop:'4px'}}>✅ RETURNED & DEACTIVATED</div>}
                         </td>
                         <td><span className={`badge badge-${item.type}`}>{item.type}</span></td>
                         <td style={{fontSize:'13px'}}>📍 {item.location}</td>

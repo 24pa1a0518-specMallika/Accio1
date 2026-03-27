@@ -56,7 +56,12 @@ router.get('/users', protect, adminOnly, async (req, res) => {
 // PUT /api/admin/items/:id/status
 router.put('/items/:id/status', protect, adminOnly, async (req, res) => {
   try {
-    const item = await Item.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+    const { status } = req.body;
+    const update = { status };
+    if (status === 'returned') update.isActive = false;
+    else if (status === 'lost' || status === 'found' || status === 'matched') update.isActive = true;
+
+    const item = await Item.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!item) return res.status(404).json({ message: 'Item not found' });
     res.json(item);
   } catch (err) {

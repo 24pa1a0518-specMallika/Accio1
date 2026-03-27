@@ -23,7 +23,7 @@ export default function Signup() {
       toast.success(`Welcome, ${user.name}! 🎉`);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.message || (err.response?.data?.message) || 'Registration failed');
     } finally { setLoading(false); }
   };
 

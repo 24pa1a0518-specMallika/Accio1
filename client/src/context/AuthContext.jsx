@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 import { io } from 'socket.io-client';
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 const AuthContext = createContext(null);
 
@@ -31,24 +33,60 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   const login = async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password });
-    localStorage.setItem('accio_token', data.token);
-    localStorage.setItem('accio_user', JSON.stringify(data.user));
-    setUser(data.user);
-    return data.user;
+    try {
+      // Firebase Login
+      console.log('Attempting Firebase login...');
+      await signInWithEmailAndPassword(auth, email, password);
+      console.log('Firebase login successful');
+      
+      // Backend Sync
+      console.log('Syncing with backend...');
+      const { data } = await api.post('/auth/login', { email, password });
+      localStorage.setItem('accio_token', data.token);
+      localStorage.setItem('accio_user', JSON.stringify(data.user));
+      setUser(data.user);
+      console.log('Backend sync successful');
+      return data.user;
+    } catch (err) {
+      console.error('Login Error:', err);
+      // Construct a better error message
+      if (err.code === 'auth/user-not-found') throw new Error('No account found with this email');
+      if (err.code === 'auth/wrong-password') throw new Error('Incorrect password');
+      if (err.code === 'auth/invalid-email') throw new Error('Invalid email format');
+      if (err.response?.data?.message) throw new Error(err.response.data.message);
+      throw err;
+    }
   };
 
   const register = async (name, email, password, adminCode) => {
-    const { data } = await api.post('/auth/register', { name, email, password, adminCode });
-    localStorage.setItem('accio_token', data.token);
-    localStorage.setItem('accio_user', JSON.stringify(data.user));
-    setUser(data.user);
-    return data.user;
+    try {
+      // Firebase Register
+      console.log('Attempting Firebase registration...');
+      await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Firebase registration successful');
+
+      // Backend Sync
+      console.log('Syncing with backend...');
+      const { data } = await api.post('/auth/register', { name, email, password, adminCode });
+      localStorage.setItem('accio_token', data.token);
+      localStorage.setItem('accio_user', JSON.stringify(data.user));
+      setUser(data.user);
+      console.log('Backend sync successful');
+      return data.user;
+    } catch (err) {
+      console.error('Registration Error:', err);
+      if (err.code === 'auth/email-already-in-use') throw new Error('Email is already in use in Firebase');
+      if (err.code === 'auth/weak-password') throw new Error('Password should be at least 6 characters');
+      if (err.response?.data?.message) throw new Error(err.response.data.message);
+      throw err;
+    }
   };
 
   const logout = () => {
     localStorage.removeItem('accio_token');
     localStorage.removeItem('accio_user');
+    // Clear any potential hanging firebase session
+    auth.signOut().catch(() => {});
     setUser(null);
     if (socket) socket.disconnect();
   };
